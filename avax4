@@ -1,0 +1,42 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.18;
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract DegenToken is ERC20, Ownable {
+    struct Item {
+        uint256 price;
+        uint256 quantity;
+    }
+
+    mapping(string => Item) public items;
+
+    constructor() ERC20("Degen", "DGN") {
+        items["apple"] = Item(20, 50);
+        items["grapes"] = Item(10, 50);
+        items["broccoli"] = Item(40, 50);
+    }
+
+    function mint(address to, uint256 amount) public onlyOwner {
+        _mint(msg.sender, amount);
+    }
+
+    function burn(uint256 amount) public {
+        _burn(msg.sender, amount);
+    }
+
+    function transfer(address to, uint256 amount) public override returns (bool) {
+        _transfer(_msgSender(), to, amount);
+        return true;
+    }
+
+    function buyItem(string memory itemName, uint256 quantity) public {
+        require(items[itemName].quantity >= quantity, "Not enough quantity available");
+        uint256 totalPrice = items[itemName].price * quantity;
+        require(balanceOf(msg.sender) >= totalPrice, "Not enough tokens to buy the item");
+
+        items[itemName].quantity -= quantity;
+        _burn(msg.sender, totalPrice);
+    }
+}
